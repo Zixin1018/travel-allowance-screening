@@ -204,3 +204,24 @@ python3 差补筛查.py <报表文件.xlsx>
 - Python 3.6+
 - openpyxl（`pip install openpyxl`）
 - `~/dscc产出/境外补贴计算器/差旅补贴计算.html`（境外标准 + 汇率来源，路径写死在代码中）
+
+## 上下游联动
+
+```
+商旅行程汇总（全交通明细）
+business-travel-summary
+      │
+      ├──→ 本模块（差补筛查）
+      │       │
+      │       └──→ 境外补贴计算器 overseas-allowance-calculator
+      │             273城标准 + 外管局汇率（返程日汇率）
+      │
+      └──→ 差旅变动分析 travel-variance-analysis
+              四数据源交叉验证
+```
+
+上游依赖[商旅行程汇总]获取出行日期/城市/境内外判断；境外部分联动[境外补贴计算器]内置的 273 城标准 + 汇率数据。
+
+[商旅行程汇总]: https://github.com/Zixin1018/business-travel-summary
+[境外补贴计算器]: https://github.com/Zixin1018/overseas-allowance-calculator
+[差旅变动分析]: https://github.com/Zixin1018/travel-variance-analysis
