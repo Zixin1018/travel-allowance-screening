@@ -41,20 +41,32 @@ OVERSEAS_PREFIXES = ['亚洲-', '欧洲-', '美洲-', '非洲-', '大洋洲-']
 # =============================================================================
 
 def load_overseas_standards(html_path=None):
-    """从差旅补贴计算.html提取273条城市标准"""
+    """加载境外273条城市标准（优先读共享JSON，回退解析HTML）"""
+    shared = os.path.expanduser('~/dscc产出/shared-data/city-standards.json')
+    if os.path.exists(shared):
+        with open(shared, 'r', encoding='utf-8') as f:
+            cities = json.load(f)
+            lookup = defaultdict(list)
+            for c in cities:
+                lookup[c['country']].append({
+                    'city': c.get('city', ''),
+                    'currency': c['currency'],
+                    'food': c['food'],
+                    'public': c['public'],
+                })
+            print(f"[OK] 加载境外标准(shared-data): {len(cities)} 条, {len(lookup)} 个国家/地区")
+            return lookup
+
+    # 回退：兼容旧版HTML解析
     if html_path is None:
         html_path = os.path.expanduser('~/dscc产出/境外补贴计算器/差旅补贴计算.html')
-
     with open(html_path, 'r', encoding='utf-8') as f:
         html = f.read()
-
     match = re.search(r'\[{"country":.*?}\](?=\s*[;,\n])', html, re.DOTALL)
     if not match:
         print("[WARN] 未找到境外城市标准数据")
         return {}
-
     cities = json.loads(match.group())
-    # 构建查找表：{国家: [(city_str, currency, food, public), ...]}
     lookup = defaultdict(list)
     for c in cities:
         lookup[c['country']].append({
@@ -63,25 +75,30 @@ def load_overseas_standards(html_path=None):
             'food': c['food'],
             'public': c['public'],
         })
-    print(f"[OK] 加载境外标准: {len(cities)} 条, {len(lookup)} 个国家/地区")
+    print(f"[OK] 加载境外标准(HTML回退): {len(cities)} 条, {len(lookup)} 个国家/地区")
     return lookup
 
 
 def load_exchange_rates(html_path=None):
-    """从差旅补贴计算.html提取嵌入式汇率数据"""
+    """加载汇率数据（优先读共享JSON，回退解析HTML）"""
+    shared = os.path.expanduser('~/dscc产出/shared-data/exchange-rates.json')
+    if os.path.exists(shared):
+        with open(shared, 'r', encoding='utf-8') as f:
+            rates = json.load(f)
+        print(f"[OK] 加载汇率(shared-data): {len(rates)} 天, 币种: USD EUR JPY HKD GBP")
+        return rates
+
+    # 回退：兼容旧版HTML解析
     if html_path is None:
         html_path = os.path.expanduser('~/dscc产出/境外补贴计算器/差旅补贴计算.html')
-
     with open(html_path, 'r', encoding='utf-8') as f:
         html = f.read()
-
     match = re.search(r'<script type="application/json" id="embeddedRatesData">(.*?)</script>', html, re.DOTALL)
     if not match:
         print("[WARN] 未找到嵌入式汇率数据，境外流程将无法换算")
         return {}
-
     rates = json.loads(match.group(1))
-    print(f"[OK] 加载汇率: {len(rates)} 天, 币种: USD EUR JPY HKD GBP")
+    print(f"[OK] 加载汇率(HTML回退): {len(rates)} 天, 币种: USD EUR JPY HKD GBP")
     return rates
 
 
